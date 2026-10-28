@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "concurrently \"npm --prefix backend run start:dev\" \"npm --prefix frontend run dev\"",
+    "backend": "npm --prefix backend run start:dev",
+    "frontend": "npm --prefix frontend run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}

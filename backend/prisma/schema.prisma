@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model College {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  city        String
+  state       String?
+  country     String   @default("India")
+  description String?
+  website     String?
+  events      Event[]
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  name            String
+  passwordHash    String?
+  role            String         @default("student")
+  isActive        Boolean        @default(true)
+  bio             String?
+  interests       String[]
+  collegeId       String?
+  college         College?       @relation(fields: [collegeId], references: [id])
+  attendingEvents Event[]        @relation("EventAttendee")
+  groupMemberships GroupMember[]
+  groupMessages    GroupMessage[]
+  sentConnections Connection[]   @relation("ConnectionRequester")
+  receivedConnections Connection[] @relation("ConnectionReceiver")
+  notifications   Notification[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Event {
+  id             String       @id @default(cuid())
+  title          String
+  description    String
+  date           DateTime
+  time           String
+  venue          String
+  category       String
+  imageUrl       String?
+  registrationUrl String?
+  interestedCount Int         @default(0)
+  collegeId      String?
+  college        College?     @relation(fields: [collegeId], references: [id])
+  attendees      User[]       @relation("EventAttendee")
+  groups         EventGroup[]
+  views           EventView[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model EventView {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+
+  @@index([eventId, viewedAt])
+}
+
+model EventGroup {
+  id        String   @id @default(cuid())
+  name      String
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  members   GroupMember[]
+  messages  GroupMessage[]
+  createdAt DateTime @default(now())
+}
+
+model GroupMember {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  groupId   String
+  group     EventGroup  @relation(fields: [groupId], references: [id])
+  role      String      @default("member")
+  joinedAt  DateTime    @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model GroupMessage {
+  id        String     @id @default(cuid())
+  groupId   String
+  group     EventGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime   @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Match {
+  id         String   @id @default(cuid())
+  userId     String
+  matchUser  String
+  score      Float    @default(0)
+  reason     String?
+  createdAt  DateTime @default(now())
+}
+
+model Connection {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, receiverId])
+}
